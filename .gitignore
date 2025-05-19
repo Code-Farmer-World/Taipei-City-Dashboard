@@ -59,6 +59,8 @@ Taipei-City-Dashboard-FE/.env.test
 docker/db-data
 # nginx ssl
 docker/nginx/ssl
+# db env 
+docker/.env
 
 
 # data end
