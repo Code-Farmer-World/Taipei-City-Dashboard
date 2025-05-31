@@ -69,17 +69,18 @@ export function getComponentDataTimeframe(time_from, time_to, api) {
 		.split(".")[0]
 		.replace("T", " ");
 
-	if (time_to === "now") {
+	if (time_to === "now" || !time_to) {
 		// let parsedTimeTo be the current time formated YYYY-MM-DD HH:MM:SS and in UTC+8
 		parsedTimeTo = new Date(nowTimeTo - tzoffset)
 			.toISOString()
 			.split(".")[0]
 			.replace("T", " ");
 	}
+	
 	if (api === true) {
 		return {
 			timefrom: parsedTimeFrom.replace(" ", "T") + "+08:00",
-			timeto: parsedTimeTo.replace(" ", "T") + "+08:00",
+			timeto: parsedTimeTo ? parsedTimeTo.replace(" ", "T") + "+08:00" : "",
 		};
 	} else {
 		return { parsedTimeFrom, parsedTimeTo };

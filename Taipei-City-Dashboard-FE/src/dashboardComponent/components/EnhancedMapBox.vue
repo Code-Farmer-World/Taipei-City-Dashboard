@@ -56,7 +56,7 @@ const popup = ref(null)
 const currentFilter = ref(null)
 
 // Mapbox configuration
-const MAPBOXTOKEN = import.meta.env.VITE_MAPBOXTOKEN
+const MAPBOXTOKEN = 'pk.eyJ1Ijoia2trMTIzNTUiLCJhIjoiY21hdXN0ZzQxMDBocjJtcHA0bGFla2xjYyJ9.VT_ubDB8ck90VbCCz4HdHg'
 const mapConfig = {
   container: 'enhanced-mapbox-container',
   style: 'mapbox://styles/mapbox/dark-v11',
@@ -143,6 +143,8 @@ const enhancedStyle = {
 const initializeMap = async () => {
   try {
     loading.value = true
+    
+    // Use the provided Mapbox token
     mapboxgl.accessToken = MAPBOXTOKEN
     
     mapInstance.value = new mapboxgl.Map(mapConfig)
@@ -153,11 +155,39 @@ const initializeMap = async () => {
       loading.value = false
     })
     
+    mapInstance.value.on('error', (e) => {
+      console.error('Mapbox error:', e)
+      console.error('Error details:', e.error)
+      // Try to use a different style if the current one fails
+      if (e.error && e.error.status === 403) {
+        console.warn('Access denied, trying alternative map style...')
+        tryAlternativeMapStyle()
+      } else {
+        loading.value = false
+      }
+    })
+    
     // Add navigation controls
     mapInstance.value.addControl(new mapboxgl.NavigationControl())
     
   } catch (error) {
     console.error('Failed to initialize map:', error)
+    loading.value = false
+  }
+}
+
+// Try alternative map style if main style fails
+const tryAlternativeMapStyle = () => {
+  try {
+    // Use a simpler, more accessible style
+    mapInstance.value.setStyle('mapbox://styles/mapbox/streets-v11')
+    mapInstance.value.once('styledata', async () => {
+      await loadMapData()
+      setupMapInteractions()
+      loading.value = false
+    })
+  } catch (error) {
+    console.error('Alternative style also failed:', error)
     loading.value = false
   }
 }
