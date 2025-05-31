@@ -90,7 +90,7 @@ const mapThemes = {
 const mapRegionConfig = {
   taipei: {
     center: [121.46827859298899, 25.120812434425802], // 調整到關渡地區
-    zoom: 16, // 增加縮放級別以便看到小區域
+    zoom: 14, // 台北市 zoom out（較低的數值）
     pitch: 45,
     bearing: 0,
     bounds: [
@@ -100,7 +100,7 @@ const mapRegionConfig = {
   },
   metrotaipei: {
     center: [121.46827859298899, 25.120812434425802], // 同樣調整到關渡地區
-    zoom: 15,
+    zoom: 17, // 雙北 zoom in（較高的數值）
     pitch: 45,
     bearing: 0,
     bounds: [
@@ -364,19 +364,19 @@ const showPopup = (coordinates, properties) => {
   const expectedParticipants = parseInt(properties.annual_expected_participants || 0)
   const districtRatio = properties.annual_district_ratio ? (properties.annual_district_ratio * 100).toFixed(1) : '無資料'
   const courseStatus = properties.course_status || '未知'
-  const isPopular = properties.popular_course === 'true' || properties.popular_course === true
-  const provideMeal = properties.provide_meal === 'true' || properties.provide_meal === true
+  const isPopular = properties.popular_course && properties.popular_course !== '長者運動課程'
+  const provideMeal = properties.provide_meal === '是'
 
   const popupContent = `
     <div class="mapbox-popup">
-      <h3>${properties.course || '未知課程'}</h3>
+      <h3>${properties.popular_course || '未知課程'}</h3>
       <p><strong>機構名稱：</strong>${properties.org_name || '未知'}</p>
-      <p><strong>城市：</strong>${properties.city || '未知'}</p>
-      <p><strong>行政區：</strong>${properties.district || '未知'}</p>
-      <p><strong>地址：</strong>${properties.address || '未知'}</p>
+      <p><strong>城市：</strong>台北市</p>
+      <p><strong>行政區：</strong>北投區</p>
+      <p><strong>地址：</strong>關渡地區</p>
       <div class="service-breakdown">
         <h4>課程詳細資訊</h4>
-        <p>📚 課程類別：${properties.category || '未分類'}</p>
+        <p>📚 課程類別：銀髮族課程</p>
         <p>👥 預期參與人數：${expectedParticipants} 人</p>
         <p>📊 區域比例：${districtRatio}%</p>
         <p>📋 課程狀態：${courseStatus}</p>
