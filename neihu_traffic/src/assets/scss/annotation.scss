@@ -1,0 +1,116 @@
+@import '@/assets/scss/variables.scss';
+$annotationColor: lighten($textSubColor, 30);
+.annotationBtn{
+    display: contents;
+    text-align: left;
+    line-height: 1.6;
+    font-size: 1rem;
+    cursor: pointer;
+    &::before,
+    &::after{
+        content: '';
+        width: 0.25rem;
+        display: inline-block;
+    }
+    span{
+        color: lighten($annotationColor, 10);
+        pointer-events: none;
+        font-size: 0.6rem;
+    }
+}
+.annotationDropdown{
+    width: 100%;
+    height: auto;
+    font-size: .75rem;
+    opacity: 0;
+    z-index: 1;
+    @media screen and (max-width:1025px){ // For mobile
+        display: none;
+    }
+    &::before{
+        content: "";
+        @extend %fixedLeftLayout;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba($blackColor, 0.3);
+        pointer-events: none;
+        z-index: 1;
+    }
+    .annotationContent{
+        position: relative;
+        visibility: hidden;
+        color: $annotationColor;
+        background-color: lighten($whiteColor, 5);
+        padding: 0.5rem;
+        p{
+            max-width: $contentLimit;
+        }
+    }
+    .annotationImage{
+        position: absolute;
+        width: 100%;
+        height: auto;
+        padding: .5rem;
+        background-color: $whiteColor;
+        z-index: 1;
+    }
+    &.open{
+        opacity: 1;
+        border-radius: .25rem;
+        background-color: $whiteColor;
+        @media screen and (max-width:1025px){ // For mobile
+            display: block;
+        }
+        .annotationContent{
+            visibility: visible;
+            z-index: 1;
+        }
+    }
+    &.bottom{
+        @extend %absoluteLeftLayout;
+        width: 100%;
+        top: 100%;
+        z-index: 1;
+        @media screen and (max-width:1025px){ // For mobile
+			width: calc(100% + 2rem);
+			left: -1rem;
+            padding: 0 1rem !important;
+			.annotationContent{
+				margin-bottom: 0.5rem !important;
+			}
+        }
+        &.left{
+            border: 1px dashed rgba($blackColor, 0.3);
+            pointer-events: none;
+        }
+        &.right{
+            border: 1px dashed rgba($blackColor, 0.3);
+            left: auto;
+            right: 0;
+            pointer-events: none;
+        }
+    }
+    &.rowLayout{
+        position: absolute;
+        z-index: 1;
+        bottom: 0;
+        width: 15rem;
+        right: -16rem;
+        @media screen and (max-width:1025px){
+            position: relative;
+            width: 100%;
+            left: 0;
+        }
+    }
+}
+.langEn .annotationDropdown{
+    &.rowLayout{
+        width: 23rem;
+        right: -24rem;
+        @media screen and (max-width:1025px){
+            position: relative;
+            width: 100%;
+            left: 0;
+        }
+    }
+}
