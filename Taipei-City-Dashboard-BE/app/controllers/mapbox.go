@@ -1,15 +1,117 @@
 package controllers
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"TaipeiCityDashboardBE/app/models"
 
 	"github.com/gin-gonic/gin"
 )
 
+// GeoJSON structures for response
+type GeoJSONFeatureCollection struct {
+	Type     string           `json:"type"`
+	Name     string           `json:"name"`
+	CRS      CRS              `json:"crs"`
+	Features []GeoJSONFeature `json:"features"`
+}
+
+type CRS struct {
+	Type       string   `json:"type"`
+	Properties CRSProps `json:"properties"`
+}
+
+type CRSProps struct {
+	Name string `json:"name"`
+}
+
+type GeoJSONFeature struct {
+	Type       string                 `json:"type"`
+	Properties map[string]interface{} `json:"properties"`
+	Geometry   Geometry               `json:"geometry"`
+}
+
+type Geometry struct {
+	Type        string        `json:"type"`
+	Coordinates [][][]float64 `json:"coordinates"`
+}
+
+// parseCoordinates parses the map string into coordinates array
+func parseCoordinates(mapStr string) ([][][]float64, error) {
+	if mapStr == "" {
+		return nil, fmt.Errorf("empty map string")
+	}
+
+	// Parse the coordinate string like "[[121.46817932209012, 25.120902275924415], ...]"
+	var coordinates [][]float64
+	err := json.Unmarshal([]byte(mapStr), &coordinates)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse coordinates: %v", err)
+	}
+
+	// Convert to the format required by GeoJSON Polygon
+	return [][][]float64{coordinates}, nil
+}
+
+// convertToGeoJSON converts courses to GeoJSON format
+func convertToGeoJSON(courses []models.ElderlyFitnessCourse) GeoJSONFeatureCollection {
+	var features []GeoJSONFeature
+
+	for _, course := range courses {
+		coordinates, err := parseCoordinates(course.Map)
+		if err != nil {
+			// Skip courses with invalid coordinates but continue processing
+			continue
+		}
+
+		// Convert annual_district_ratio from string to int if possible
+		annualRatio := 0
+		if course.AnnualDistrictRatio != "" {
+			if ratio, err := strconv.Atoi(course.AnnualDistrictRatio); err == nil {
+				annualRatio = ratio
+			}
+		}
+
+		properties := map[string]interface{}{
+			"id":                           fmt.Sprintf("%d", course.ID),
+			"org_name":                     course.OrgName,
+			"provide_meal":                 course.ProvideMeal,
+			"annual_district_ratio":        annualRatio,
+			"annual_expected_participants": course.AnnualExpectedParticipants,
+			"course_status":                course.CourseStatus,
+			"popular_course":               course.PopularCourse,
+		}
+
+		feature := GeoJSONFeature{
+			Type:       "Feature",
+			Properties: properties,
+			Geometry: Geometry{
+				Type:        "Polygon",
+				Coordinates: coordinates,
+			},
+		}
+
+		features = append(features, feature)
+	}
+
+	return GeoJSONFeatureCollection{
+		Type: "FeatureCollection",
+		Name: "elderly_fitness_courses",
+		CRS: CRS{
+			Type: "name",
+			Properties: CRSProps{
+				Name: "urn:ogc:def:crs:OGC:1.3:CRS84",
+			},
+		},
+		Features: features,
+	}
+}
+
 /*
-GetAllElderlyFitnessCourses returns all elderly fitness courses information
+GetAllElderlyFitnessCourses returns all elderly fitness courses information in GeoJSON format
 GET /api/v1/elderly-fitness-courses
 */
 func GetAllElderlyFitnessCourses(c *gin.Context) {
@@ -19,7 +121,9 @@ func GetAllElderlyFitnessCourses(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "success", "total": len(courses), "data": courses})
+	// Convert to GeoJSON format
+	geoJSON := convertToGeoJSON(courses)
+	c.JSON(http.StatusOK, geoJSON)
 }
 
 /*
