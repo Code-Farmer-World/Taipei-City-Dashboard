@@ -4641,7 +4641,7 @@
 			},
 			"chart_config": {
 				"color": ["#4797B7"],
-				"types": ["DistrictChart", "ColumnChart"],
+				"types": ["DistrictChart", "ColumnChart", "EnhancedMapBox"],
 				"unit": "人"
 			},
 			"name": "幼兒人數統計",

@@ -1,0 +1,45 @@
+export const TaipeiData = [
+    {
+        "id": 67243,
+        "pop_work_min": 3948,
+        "bus_up": 12,
+        "bus_down": 7,
+        "mrt_up": 5,
+        "mrt_down": 6,
+        "ubike_up": 2,
+        "ubike_down": 10,
+        "COUNTYNAME": "臺北市",
+        "TOWNNAME": "內湖區",
+        "VILLNAME": "西湖里",
+        "COUNTYCODE": 63000,
+        "TOWNID": "A14",
+        "bus_avg": 10,
+        "mrt_avg": 6,
+        "ubike_avg": 6,
+        "transport_avg": 22,
+        "untransport": 3926,
+        "transport_rate": 0.00557
+	},
+      {
+        "id": 80490,
+        "pop_work_min": 0,
+        "bus_up": 0,
+        "bus_down": 0,
+        "mrt_up": 0,
+        "mrt_down": 0,
+        "ubike_up": 0,
+        "ubike_down": 0,
+        "COUNTYNAME": "臺北市",
+        "TOWNNAME": "南港區",
+        "VILLNAME": "舊莊里",
+        "COUNTYCODE": 63000,
+        "TOWNID": "A13",
+        "bus_avg": 0,
+        "mrt_avg": 0,
+        "ubike_avg": 0,
+        "transport_avg": 0,
+        "untransport": 0,
+        "transport_rate": ""
+    }
+]
+export default {}
