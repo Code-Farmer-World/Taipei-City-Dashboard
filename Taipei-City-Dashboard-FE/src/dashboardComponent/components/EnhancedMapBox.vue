@@ -2,24 +2,25 @@
 <!-- Based on neihu_traffic MapBox implementation -->
 
 <template>
-  <div class="enhanced-mapbox">
-    <div id="enhanced-mapbox-container" class="mapbox-container" />
+  <div class="enhanced-mapbox" :class="{ 'dark': isDarkTheme }">
+    <div id="enhanced-mapbox-container" class="mapbox-container" ref="mapContainer" />
     <div v-if="loading" class="loading-overlay">
       <div class="loading-spinner" />
       <p>載入地圖中...</p>
     </div>
     <!-- 主題切換按鈕 -->
     <div class="theme-toggle-container">
-      <button 
+      <button
         class="theme-toggle-btn"
         @click="toggleMapTheme"
         :title="isDarkTheme ? '切換到亮色主題' : '切換到暗色主題'"
       >
-        <i :class="isDarkTheme ? 'fas fa-sun' : 'fas fa-moon'"></i>
+        <span class="material-icons">{{ isDarkTheme ? 'light_mode' : 'dark_mode' }}</span>
       </button>
     </div>
   </div>
 </template>
+
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
@@ -185,18 +186,18 @@ const enhancedStyle = {
 const initializeMap = async () => {
   try {
     loading.value = true
-    
+
     // Use the provided Mapbox token
     mapboxgl.accessToken = MAPBOXTOKEN
-    
+
     mapInstance.value = new mapboxgl.Map(getMapConfig())
-    
+
     mapInstance.value.on('load', async () => {
       await loadMapData()
       setupMapInteractions()
       loading.value = false
     })
-    
+
     mapInstance.value.on('error', (e) => {
       console.error('Mapbox error:', e)
       console.error('Error details:', e.error)
@@ -208,10 +209,10 @@ const initializeMap = async () => {
         loading.value = false
       }
     })
-    
+
     // Add navigation controls
     mapInstance.value.addControl(new mapboxgl.NavigationControl())
-    
+
   } catch (error) {
     console.error('Failed to initialize map:', error)
     loading.value = false
@@ -239,7 +240,7 @@ const loadMapData = async () => {
   try {
     // Determine which data file to load based on mapRegion
     let dataFile = '/data/small.geojson' // default for taipei
-    
+
     if (props.mapRegion === 'metrotaipei') {
       // For Metro Taipei (both cities), use the combined data
       dataFile = '/mapData/metrotaipei_village.geojson'
@@ -247,42 +248,42 @@ const loadMapData = async () => {
       // For Taipei City, use the existing small.geojson
       dataFile = '/data/small.geojson'
     }
-    
+
     const response = await fetch(dataFile)
     const geojsonData = await response.json()
-    
+
     // Filter data based on region if needed
     let filteredData = geojsonData
     if (props.mapRegion === 'taipei' && geojsonData.features && dataFile.includes('metrotaipei')) {
       // Filter for Taipei City only when using metrotaipei data
       filteredData = {
         ...geojsonData,
-        features: geojsonData.features.filter(feature => 
-          feature.properties && 
+        features: geojsonData.features.filter(feature =>
+          feature.properties &&
           (feature.properties.PNAME === '臺北市' || feature.properties.COUNTYNAME === '臺北市')
         )
       }
     }
     // For metrotaipei, use all data without filtering
-    
+
     // Remove existing source if it exists
     if (mapInstance.value.getSource('senior-service-data')) {
       mapInstance.value.removeLayer('senior-service-3d')
       mapInstance.value.removeSource('senior-service-data')
     }
-    
+
     // Add data source
     mapInstance.value.addSource('senior-service-data', {
       type: 'geojson',
       data: filteredData
     })
-    
+
     // Add 3D buildings layer
     const layers = mapInstance.value.getStyle().layers
     const labelLayerId = layers.find(
       (layer) => layer.type === 'symbol' && layer.layout['text-field']
     ).id
-    
+
     // Add enhanced 3D extrusion layer
     mapInstance.value.addLayer({
       id: 'senior-service-3d',
@@ -291,7 +292,7 @@ const loadMapData = async () => {
       layout: {},
       paint: enhancedStyle.PopWorkStyle
     }, labelLayerId)
-    
+
     // Add building layer for context
     mapInstance.value.addLayer({
       id: 'building-3d',
@@ -302,7 +303,7 @@ const loadMapData = async () => {
       minzoom: 15,
       paint: enhancedStyle.mapboxBuildings
     })
-    
+
   } catch (error) {
     console.error('Failed to load map data:', error)
   }
@@ -314,15 +315,15 @@ const setupMapInteractions = () => {
   mapInstance.value.on('click', 'senior-service-3d', (e) => {
     const coordinates = e.lngLat
     const properties = e.features[0].properties
-    
+
     showPopup(coordinates, properties)
   })
-  
+
   // Hover effects
   mapInstance.value.on('mouseenter', 'senior-service-3d', () => {
     mapInstance.value.getCanvas().style.cursor = 'pointer'
   })
-  
+
   mapInstance.value.on('mouseleave', 'senior-service-3d', () => {
     mapInstance.value.getCanvas().style.cursor = ''
   })
@@ -333,11 +334,11 @@ const showPopup = (coordinates, properties) => {
   if (popup.value) {
     popup.value.remove()
   }
-  
+
   const workingPopulation = parseInt(properties.pop_work_min || 0)
   const transportAvg = parseInt(properties.transport_avg || 0)
   const transportRate = properties.transport_rate ? (properties.transport_rate * 100).toFixed(1) : '無資料'
-  
+
   const popupContent = `
     <div class="mapbox-popup">
       <h3>${properties.VILLNAME || '未知地區'}</h3>
@@ -355,7 +356,7 @@ const showPopup = (coordinates, properties) => {
       </div>
     </div>
   `
-  
+
   popup.value = new mapboxgl.Popup()
     .setLngLat(coordinates)
     .setHTML(popupContent)
@@ -365,18 +366,18 @@ const showPopup = (coordinates, properties) => {
 // 地圖區域切換方法
 const switchMapRegion = async (region) => {
   if (!mapInstance.value || !mapRegionConfig[region]) return
-  
+
   const config = mapRegionConfig[region]
-  
+
   // Reload map data for the new region
   await loadMapData()
-  
+
   // Re-add the 3D layer after loading new data
   const layers = mapInstance.value.getStyle().layers
   const labelLayerId = layers.find(
     (layer) => layer.type === 'symbol' && layer.layout['text-field']
   )?.id
-  
+
   if (labelLayerId && !mapInstance.value.getLayer('senior-service-3d')) {
     mapInstance.value.addLayer({
       id: 'senior-service-3d',
@@ -386,7 +387,7 @@ const switchMapRegion = async (region) => {
       paint: enhancedStyle.PopWorkStyle
     }, labelLayerId)
   }
-  
+
   // 使用 easeTo 進行平滑動畫切換
   mapInstance.value.easeTo({
     center: config.center,
@@ -396,7 +397,7 @@ const switchMapRegion = async (region) => {
     duration: animationConfig.duration,
     easing: animationConfig.easing
   })
-  
+
   // 可選：同時調整地圖邊界
   setTimeout(() => {
     if (config.bounds) {
@@ -428,13 +429,13 @@ watch(() => props.activeCity, async (newCity) => {
   if (mapInstance.value && mapInstance.value.isStyleLoaded()) {
     // Map activeCity values to mapRegion values
     let targetRegion = 'taipei' // default
-    
+
     if (newCity === 'taipei') {
       targetRegion = 'taipei'
     } else if (newCity === 'metrotaipei') {
       targetRegion = 'metrotaipei'
     }
-    
+
     // Update the mapRegion prop to trigger data reload
     const currentMapRegion = props.mapRegion
     if (currentMapRegion !== targetRegion) {
@@ -445,7 +446,7 @@ watch(() => props.activeCity, async (newCity) => {
         configurable: true
       })
     }
-    
+
     await switchMapRegion(targetRegion)
   }
 }, { immediate: false })
@@ -453,19 +454,19 @@ watch(() => props.activeCity, async (newCity) => {
 // 主題切換函數
 const toggleMapTheme = () => {
   isDarkTheme.value = !isDarkTheme.value
-  
+
   if (mapInstance.value && mapInstance.value.isStyleLoaded()) {
     const newStyle = isDarkTheme.value ? mapThemes.dark : mapThemes.light
-    
+
     // 保存當前的地圖狀態
     const currentCenter = mapInstance.value.getCenter()
     const currentZoom = mapInstance.value.getZoom()
     const currentPitch = mapInstance.value.getPitch()
     const currentBearing = mapInstance.value.getBearing()
-    
+
     // 切換地圖樣式
     mapInstance.value.setStyle(newStyle)
-    
+
     // 等待樣式載入完成後重新添加數據層
     mapInstance.value.once('styledata', async () => {
       // 恢復地圖狀態
@@ -473,7 +474,7 @@ const toggleMapTheme = () => {
       mapInstance.value.setZoom(currentZoom)
       mapInstance.value.setPitch(currentPitch)
       mapInstance.value.setBearing(currentBearing)
-      
+
       // 重新載入地圖數據和圖層
       await loadMapData()
       setupMapInteractions()
@@ -504,7 +505,10 @@ onUnmounted(() => {
 })
 </script>
 
+
+
 <style scoped>
+/* ────────── 地圖容器 ────────── */
 .enhanced-mapbox {
   position: relative;
   width: 100%;
@@ -518,18 +522,16 @@ onUnmounted(() => {
   height: 100%;
 }
 
+/* ────────── 載入遮罩 ────────── */
 .loading-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: rgba(0, 0, 0, 0.7);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: #fff;
   z-index: 1000;
 }
 
@@ -537,74 +539,85 @@ onUnmounted(() => {
   width: 40px;
   height: 40px;
   border: 3px solid rgba(255, 255, 255, 0.3);
-  border-top: 3px solid white;
+  border-top: 3px solid #fff;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 10px;
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  to { transform: rotate(360deg); }
 }
 
-/* 主題切換按鈕樣式 */
+/* ────────── 主題切換按鈕 ────────── */
 .theme-toggle-container {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 110px;
+  right: 5px;
   z-index: 1000;
 }
 
+/* ✔ 精簡後唯一的 `.theme-toggle-btn` 定義 */
 .theme-toggle-btn {
   width: 40px;
   height: 40px;
-  border: none;
+  padding: 0;
+  border: 1px solid #e0e0e0;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.9);
   color: #333;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  transition: all 0.3s ease;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
 }
 
 .theme-toggle-btn:hover {
-  background: rgba(255, 255, 255, 1);
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background: #f0f0f0;
+
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .theme-toggle-btn:active {
-  transform: scale(0.95);
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
-.theme-toggle-btn i {
+.theme-toggle-btn span,
+.theme-toggle-btn .icon {
+  font-size: 20px;
+  color: #333; /* 預設深色 */
   transition: all 0.3s ease;
 }
 
-/* 暗色主題時的按鈕樣式 */
-.enhanced-mapbox:has(.theme-toggle-btn) .theme-toggle-btn {
-  background: rgba(255, 255, 255, 0.9);
+
+
+/* ────────── 暗色主題覆寫 ────────── */
+.enhanced-mapbox.dark .theme-toggle-btn {
+  background: rgba(45, 45, 45, 0.9);
+  border-color: #555;
 }
 
-.theme-toggle-btn:hover i {
-  transform: rotate(15deg);
+.enhanced-mapbox.dark .theme-toggle-btn .icon,
+.enhanced-mapbox.dark .theme-toggle-btn span {
+  color: #fff !important;
 }
-</style>
 
-<style>
-/* Global popup styles */
+.enhanced-mapbox.dark .theme-toggle-btn:hover {
+  background: rgba(60, 60, 60, 0.95);
+}
+
+/* ────────── Popup 文字樣式 ────────── */
 .mapbox-popup {
   font-family: inherit;
 }
 
 .mapbox-popup h3 {
-  margin: 0 0 10px 0;
+  margin: 0 0 10px;
   color: #333;
   font-size: 16px;
 }
@@ -615,6 +628,7 @@ onUnmounted(() => {
   color: #666;
 }
 
+/* 服務細項 */
 .service-breakdown {
   margin-top: 10px;
   padding-top: 10px;
@@ -629,18 +643,40 @@ onUnmounted(() => {
 .service-note {
   margin-top: 8px;
   padding: 5px;
-  background-color: #f0f8ff;
+  background: #f0f8ff;
   border-radius: 4px;
   font-style: italic;
   color: #2c5aa0;
 }
 
+/* Mapbox 原生 Popup 美化 */
 .mapboxgl-popup-content {
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .mapboxgl-popup-tip {
-  border-top-color: white;
+  border-top-color: #fff;
+}
+
+/* ────────── Material Icons ────────── */
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
+.material-icons {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  color: inherit;
 }
 </style>
+
