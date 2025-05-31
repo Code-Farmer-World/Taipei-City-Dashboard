@@ -18,7 +18,7 @@ type GeoJSONFeatureCollection struct {
 }
 
 type GeoJSONFeature struct {
-	ID         string                 `json:"id"`
+	// ID         string                 `json:"id"`
 	Type       string                 `json:"type"`
 	Properties map[string]interface{} `json:"properties"`
 	Geometry   Geometry               `json:"geometry"`
@@ -76,7 +76,7 @@ func convertToGeoJSON(courses []models.ElderlyFitnessCourse) GeoJSONFeatureColle
 		}
 
 		feature := GeoJSONFeature{
-			ID:         fmt.Sprintf("%d", course.ID), // Use database ID as feature ID
+			// ID:         fmt.Sprintf("%d", course.ID), // Use database ID as feature ID
 			Type:       "Feature",
 			Properties: properties,
 			Geometry: Geometry{
