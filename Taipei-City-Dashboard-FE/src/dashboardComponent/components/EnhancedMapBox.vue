@@ -89,8 +89,8 @@ const mapThemes = {
 // 地圖區域配置
 const mapRegionConfig = {
   taipei: {
-    center: [121.55585298158064, 25.05244617333119],
-    zoom: 11.5,
+    center: [121.46827859298899, 25.120812434425802], // 調整到關渡地區
+    zoom: 16, // 增加縮放級別以便看到小區域
     pitch: 45,
     bearing: 0,
     bounds: [
@@ -99,8 +99,8 @@ const mapRegionConfig = {
     ]
   },
   metrotaipei: {
-    center: [121.5394269250055, 25.037188097677472],
-    zoom: 10.5,
+    center: [121.46827859298899, 25.120812434425802], // 同樣調整到關渡地區
+    zoom: 15,
     pitch: 45,
     bearing: 0,
     bounds: [
@@ -126,28 +126,28 @@ const getMapConfig = () => ({
   antialias: true
 })
 
-// Enhanced style configuration based on neihu_traffic
+// Enhanced style configuration for senior service data
 const enhancedStyle = {
   PopWorkStyle: {
     'fill-extrusion-color': [
       'interpolate',
       ['linear'],
-      ['to-number', ['get', 'pop_work_min'], 0],
+      ['to-number', ['get', 'annual_expected_participants'], 0],
       0, '#0C303E',
-      10, '#184556',
-      20, '#1E4F63',
-      30, '#24596F',
-      40, '#2A647B',
-      50, '#2F6E87',
-      60, '#3B829F',
-      70, '#4797B7',
-      80, '#52ABCF',
-      90, '#5EC0E7'
+      20, '#184556',
+      40, '#1E4F63',
+      60, '#24596F',
+      80, '#2A647B',
+      100, '#2F6E87',
+      120, '#3B829F',
+      140, '#4797B7',
+      160, '#52ABCF',
+      180, '#5EC0E7'
     ],
     'fill-extrusion-height': [
       'interpolate',
       ['linear'],
-      ['to-number', ['get', 'pop_work_min'], 0],
+      ['to-number', ['get', 'annual_expected_participants'], 0],
       0, 0,
       10, 200,
       20, 400,
@@ -268,37 +268,27 @@ const loadMapData = async () => {
       }))
     }
 
-    // Filter data based on region if needed
+    // Use all data without filtering for now to ensure visibility
     let filteredData = geojsonData
-    if (props.mapRegion === 'taipei') {
-      // Filter for Taipei City only - based on coordinates or org_name
-      filteredData = {
-        ...geojsonData,
-        features: geojsonData.features.filter(feature =>
-          feature.properties &&
-          (feature.properties.org_name && feature.properties.org_name.includes('台北')) ||
-          (feature.geometry && feature.geometry.coordinates && 
-           feature.geometry.coordinates[0] && feature.geometry.coordinates[0][0] &&
-           feature.geometry.coordinates[0][0][0] >= 121.4 && feature.geometry.coordinates[0][0][0] <= 121.7 &&
-           feature.geometry.coordinates[0][0][1] >= 25.0 && feature.geometry.coordinates[0][0][1] <= 25.3)
-        )
-      }
-    } else if (props.mapRegion === 'metrotaipei') {
-      // Include both Taipei and New Taipei - based on coordinates or org_name
-      filteredData = {
-        ...geojsonData,
-        features: geojsonData.features.filter(feature =>
-          feature.properties &&
-          (feature.properties.org_name && 
-           (feature.properties.org_name.includes('台北') || feature.properties.org_name.includes('新北'))) ||
-          (feature.geometry && feature.geometry.coordinates && 
-           feature.geometry.coordinates[0] && feature.geometry.coordinates[0][0] &&
-           feature.geometry.coordinates[0][0][0] >= 121.2 && feature.geometry.coordinates[0][0][0] <= 121.8 &&
-           feature.geometry.coordinates[0][0][1] >= 24.8 && feature.geometry.coordinates[0][0][1] <= 25.4)
-        )
-      }
-    }
-    // For other regions, use all data without filtering
+    
+    console.log('Original geojsonData:', geojsonData)
+    console.log('Number of features:', geojsonData.features.length)
+    console.log('First feature properties:', geojsonData.features[0]?.properties)
+    console.log('First feature coordinates:', geojsonData.features[0]?.geometry?.coordinates)
+    
+    // Temporarily disable filtering to debug rendering issues
+    // if (props.mapRegion === 'taipei') {
+    //   // Filter for Taipei City only - based on coordinates
+    //   filteredData = {
+    //     ...geojsonData,
+    //     features: geojsonData.features.filter(feature =>
+    //       feature.geometry && feature.geometry.coordinates && 
+    //       feature.geometry.coordinates[0] && feature.geometry.coordinates[0][0] &&
+    //       feature.geometry.coordinates[0][0][0] >= 121.4 && feature.geometry.coordinates[0][0][0] <= 121.7 &&
+    //       feature.geometry.coordinates[0][0][1] >= 25.0 && feature.geometry.coordinates[0][0][1] <= 25.3
+    //     )
+    //   }
+    // }
 
     // Remove existing source if it exists
     if (mapInstance.value.getSource('senior-service-data')) {
