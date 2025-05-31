@@ -73,49 +73,33 @@ const enhancedStyle = {
     'fill-extrusion-color': [
       'interpolate',
       ['linear'],
-      [
-        '+',
-        ['to-number', ['get', '0歲數量'] || 0],
-        ['to-number', ['get', '1歲數量'] || 0],
-        ['to-number', ['get', '2歲數量'] || 0],
-        ['to-number', ['get', '3歲數量'] || 0],
-        ['to-number', ['get', '4歲數量'] || 0],
-        ['to-number', ['get', '5歲數量'] || 0]
-      ],
+      ['to-number', ['get', 'pop_work_min'], 0],
       0, '#0C303E',
-      50, '#184556',
-      100, '#1E4F63',
-      150, '#24596F',
-      200, '#2A647B',
-      250, '#2F6E87',
-      300, '#3B829F',
-      350, '#4797B7',
-      400, '#52ABCF',
-      450, '#5EC0E7'
+      10, '#184556',
+      20, '#1E4F63',
+      30, '#24596F',
+      40, '#2A647B',
+      50, '#2F6E87',
+      60, '#3B829F',
+      70, '#4797B7',
+      80, '#52ABCF',
+      90, '#5EC0E7'
     ],
     'fill-extrusion-height': [
       'interpolate',
       ['linear'],
-      [
-        '+',
-        ['to-number', ['get', '0歲數量'] || 0],
-        ['to-number', ['get', '1歲數量'] || 0],
-        ['to-number', ['get', '2歲數量'] || 0],
-        ['to-number', ['get', '3歲數量'] || 0],
-        ['to-number', ['get', '4歲數量'] || 0],
-        ['to-number', ['get', '5歲數量'] || 0]
-      ],
+      ['to-number', ['get', 'pop_work_min'], 0],
       0, 0,
-      50, 100,
-      100, 200,
-      150, 300,
-      200, 400,
-      250, 500,
-      300, 600,
-      350, 700,
-      400, 800,
-      450, 900,
-      500, 1000
+      10, 200,
+      20, 400,
+      30, 600,
+      40, 800,
+      50, 1000,
+      60, 1200,
+      70, 1400,
+      80, 1600,
+      90, 1800,
+      100, 2000
     ],
     'fill-extrusion-opacity': 0.8
   },
@@ -196,11 +180,11 @@ const tryAlternativeMapStyle = () => {
 const loadMapData = async () => {
   try {
     // Load small.geojson data
-    const response = await fetch('https://github.com/Code-Farmer-World/Taipei-City-Dashboard/blob/01aab7d995948e591e20ec2dce08515044d5102c/neihu_traffic/public/data/small.geojson')
+    const response = await fetch('/data/small.geojson')
     const geojsonData = await response.json()
     
     // Add data source
-    mapInstance.value.addSource('newborn-data', {
+    mapInstance.value.addSource('senior-service-data', {
       type: 'geojson',
       data: geojsonData
     })
@@ -213,9 +197,9 @@ const loadMapData = async () => {
     
     // Add enhanced 3D extrusion layer
     mapInstance.value.addLayer({
-      id: 'newborn-3d',
+      id: 'senior-service-3d',
       type: 'fill-extrusion',
-      source: 'newborn-data',
+      source: 'senior-service-data',
       layout: {},
       paint: enhancedStyle.PopWorkStyle
     }, labelLayerId)
@@ -239,7 +223,7 @@ const loadMapData = async () => {
 // Setup map interactions
 const setupMapInteractions = () => {
   // Click event for popup
-  mapInstance.value.on('click', 'newborn-3d', (e) => {
+  mapInstance.value.on('click', 'senior-service-3d', (e) => {
     const coordinates = e.lngLat
     const properties = e.features[0].properties
     
@@ -247,11 +231,11 @@ const setupMapInteractions = () => {
   })
   
   // Hover effects
-  mapInstance.value.on('mouseenter', 'newborn-3d', () => {
+  mapInstance.value.on('mouseenter', 'senior-service-3d', () => {
     mapInstance.value.getCanvas().style.cursor = 'pointer'
   })
   
-  mapInstance.value.on('mouseleave', 'newborn-3d', () => {
+  mapInstance.value.on('mouseleave', 'senior-service-3d', () => {
     mapInstance.value.getCanvas().style.cursor = ''
   })
 }
@@ -262,27 +246,24 @@ const showPopup = (coordinates, properties) => {
     popup.value.remove()
   }
   
-  const totalPopulation = (
-    parseInt(properties['0歲數量'] || 0) +
-    parseInt(properties['1歲數量'] || 0) +
-    parseInt(properties['2歲數量'] || 0) +
-    parseInt(properties['3歲數量'] || 0) +
-    parseInt(properties['4歲數量'] || 0) +
-    parseInt(properties['5歲數量'] || 0)
-  )
+  const workingPopulation = parseInt(properties.pop_work_min || 0)
+  const transportAvg = parseInt(properties.transport_avg || 0)
+  const transportRate = properties.transport_rate ? (properties.transport_rate * 100).toFixed(1) : '無資料'
   
   const popupContent = `
     <div class="mapbox-popup">
       <h3>${properties.VILLNAME || '未知地區'}</h3>
       <p><strong>行政區：</strong>${properties.TOWNNAME || '未知'}</p>
-      <p><strong>總幼兒人數：</strong>${totalPopulation} 人</p>
-      <div class="age-breakdown">
-        <p>0歲：${properties['0歲數量'] || 0} 人</p>
-        <p>1歲：${properties['1歲數量'] || 0} 人</p>
-        <p>2歲：${properties['2歲數量'] || 0} 人</p>
-        <p>3歲：${properties['3歲數量'] || 0} 人</p>
-        <p>4歲：${properties['4歲數量'] || 0} 人</p>
-        <p>5歲：${properties['5歲數量'] || 0} 人</p>
+      <p><strong>工作人口數：</strong>${workingPopulation} 人</p>
+      <p><strong>交通便利度：</strong>${transportRate}%</p>
+      <div class="service-breakdown">
+        <h4>銀髮族交通服務便利性分析</h4>
+        <p>🚌 公車服務：上車 ${properties.bus_up || 0} 人次 / 下車 ${properties.bus_down || 0} 人次</p>
+        <p>🚇 捷運服務：上車 ${properties.mrt_up || 0} 人次 / 下車 ${properties.mrt_down || 0} 人次</p>
+        <p>🚲 Ubike服務：借車 ${properties.ubike_up || 0} 人次 / 還車 ${properties.ubike_down || 0} 人次</p>
+        <p>📊 平均交通使用量：${transportAvg} 人次</p>
+        <p>🏠 非交通通勤人口：${properties.untransport || 0} 人</p>
+        <p class="service-note">💡 此區域銀髮族可透過多元交通工具便利出行</p>
       </div>
     </div>
   `
@@ -381,15 +362,24 @@ onUnmounted(() => {
   color: #666;
 }
 
-.age-breakdown {
+.service-breakdown {
   margin-top: 10px;
   padding-top: 10px;
   border-top: 1px solid #eee;
 }
 
-.age-breakdown p {
+.service-breakdown p {
   margin: 3px 0;
   font-size: 12px;
+}
+
+.service-note {
+  margin-top: 8px;
+  padding: 5px;
+  background-color: #f0f8ff;
+  border-radius: 4px;
+  font-style: italic;
+  color: #2c5aa0;
 }
 
 .mapboxgl-popup-content {
