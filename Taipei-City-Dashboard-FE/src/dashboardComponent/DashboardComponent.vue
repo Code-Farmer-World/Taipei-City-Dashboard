@@ -563,6 +563,28 @@ button:hover {
 	border-radius: 5px;
 	background-color: var(--color-component-background);
 
+	/* 讓包含 EnhancedMapBox 的組件跨越整個網格寬度 */
+	&:has(.enhanced-mapbox) {
+		grid-column: 1 / -1;
+		height: 500px;
+		max-height: 500px;
+
+		@media (min-width: 720px) {
+			height: 600px;
+			max-height: 600px;
+		}
+
+		@media (min-width: 1200px) {
+			height: 700px;
+			max-height: 700px;
+		}
+
+		@media (min-width: 1800px) {
+			height: 800px;
+			max-height: 800px;
+		}
+	}
+
 	@media (min-width: 1050px) {
 		height: 370px;
 		max-height: 370px;
