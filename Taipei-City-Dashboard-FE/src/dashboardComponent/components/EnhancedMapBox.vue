@@ -59,7 +59,7 @@ const currentFilter = ref(null)
 const MAPBOXTOKEN = 'pk.eyJ1Ijoia2trMTIzNTUiLCJhIjoiY21hdXN0ZzQxMDBocjJtcHA0bGFla2xjYyJ9.VT_ubDB8ck90VbCCz4HdHg'
 const mapConfig = {
   container: 'enhanced-mapbox-container',
-  style: 'mapbox://styles/mapbox/dark-v11',
+  style: 'mapbox://styles/mapbox/light-v10',
   center: [121.5654, 25.0330], // Taipei center
   zoom: 10,
   pitch: 45,
@@ -196,7 +196,7 @@ const tryAlternativeMapStyle = () => {
 const loadMapData = async () => {
   try {
     // Load small.geojson data
-    const response = await fetch('/data/small.geojson')
+    const response = await fetch('https://github.com/Code-Farmer-World/Taipei-City-Dashboard/blob/01aab7d995948e591e20ec2dce08515044d5102c/neihu_traffic/public/data/small.geojson')
     const geojsonData = await response.json()
     
     // Add data source
