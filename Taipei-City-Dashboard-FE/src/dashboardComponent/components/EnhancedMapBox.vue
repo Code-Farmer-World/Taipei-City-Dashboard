@@ -8,6 +8,16 @@
       <div class="loading-spinner" />
       <p>載入地圖中...</p>
     </div>
+    <!-- 主題切換按鈕 -->
+    <div class="theme-toggle-container">
+      <button 
+        class="theme-toggle-btn"
+        @click="toggleMapTheme"
+        :title="isDarkTheme ? '切換到亮色主題' : '切換到暗色主題'"
+      >
+        <i :class="isDarkTheme ? 'fas fa-sun' : 'fas fa-moon'"></i>
+      </button>
+    </div>
   </div>
 </template>
 
@@ -64,9 +74,16 @@ const loading = ref(true)
 const mapInstance = ref(null)
 const popup = ref(null)
 const currentFilter = ref(null)
+const isDarkTheme = ref(false)
 
 // Mapbox configuration
 const MAPBOXTOKEN = 'pk.eyJ1Ijoia2trMTIzNTUiLCJhIjoiY21hdXN0ZzQxMDBocjJtcHA0bGFla2xjYyJ9.VT_ubDB8ck90VbCCz4HdHg'
+
+// 地圖主題配置
+const mapThemes = {
+  light: 'mapbox://styles/mapbox/light-v10',
+  dark: 'mapbox://styles/mapbox/dark-v10'
+}
 
 // 地圖區域配置
 const mapRegionConfig = {
@@ -98,15 +115,15 @@ const animationConfig = {
   easing: 'ease-in-out'
 }
 
-const mapConfig = {
+const getMapConfig = () => ({
   container: 'enhanced-mapbox-container',
-  style: 'mapbox://styles/mapbox/light-v10',
+  style: isDarkTheme.value ? mapThemes.dark : mapThemes.light,
   center: mapRegionConfig.taipei.center,
   zoom: mapRegionConfig.taipei.zoom,
   pitch: mapRegionConfig.taipei.pitch,
   bearing: mapRegionConfig.taipei.bearing,
   antialias: true
-}
+})
 
 // Enhanced style configuration based on neihu_traffic
 const enhancedStyle = {
@@ -172,7 +189,7 @@ const initializeMap = async () => {
     // Use the provided Mapbox token
     mapboxgl.accessToken = MAPBOXTOKEN
     
-    mapInstance.value = new mapboxgl.Map(mapConfig)
+    mapInstance.value = new mapboxgl.Map(getMapConfig())
     
     mapInstance.value.on('load', async () => {
       await loadMapData()
@@ -433,6 +450,37 @@ watch(() => props.activeCity, async (newCity) => {
   }
 }, { immediate: false })
 
+// 主題切換函數
+const toggleMapTheme = () => {
+  isDarkTheme.value = !isDarkTheme.value
+  
+  if (mapInstance.value && mapInstance.value.isStyleLoaded()) {
+    const newStyle = isDarkTheme.value ? mapThemes.dark : mapThemes.light
+    
+    // 保存當前的地圖狀態
+    const currentCenter = mapInstance.value.getCenter()
+    const currentZoom = mapInstance.value.getZoom()
+    const currentPitch = mapInstance.value.getPitch()
+    const currentBearing = mapInstance.value.getBearing()
+    
+    // 切換地圖樣式
+    mapInstance.value.setStyle(newStyle)
+    
+    // 等待樣式載入完成後重新添加數據層
+    mapInstance.value.once('styledata', async () => {
+      // 恢復地圖狀態
+      mapInstance.value.setCenter(currentCenter)
+      mapInstance.value.setZoom(currentZoom)
+      mapInstance.value.setPitch(currentPitch)
+      mapInstance.value.setBearing(currentBearing)
+      
+      // 重新載入地圖數據和圖層
+      await loadMapData()
+      setupMapInteractions()
+    })
+  }
+}
+
 // 暴露方法給父組件使用
 defineExpose({
   switchMapRegion,
@@ -498,6 +546,54 @@ onUnmounted(() => {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* 主題切換按鈕樣式 */
+.theme-toggle-container {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+}
+
+.theme-toggle-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.theme-toggle-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.theme-toggle-btn:active {
+  transform: scale(0.95);
+}
+
+.theme-toggle-btn i {
+  transition: all 0.3s ease;
+}
+
+/* 暗色主題時的按鈕樣式 */
+.enhanced-mapbox:has(.theme-toggle-btn) .theme-toggle-btn {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.theme-toggle-btn:hover i {
+  transform: rotate(15deg);
 }
 </style>
 
