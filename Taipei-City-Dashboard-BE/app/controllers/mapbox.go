@@ -14,21 +14,11 @@ import (
 // GeoJSON structures for response
 type GeoJSONFeatureCollection struct {
 	Type     string           `json:"type"`
-	Name     string           `json:"name"`
-	CRS      CRS              `json:"crs"`
 	Features []GeoJSONFeature `json:"features"`
 }
 
-type CRS struct {
-	Type       string   `json:"type"`
-	Properties CRSProps `json:"properties"`
-}
-
-type CRSProps struct {
-	Name string `json:"name"`
-}
-
 type GeoJSONFeature struct {
+	ID         string                 `json:"id"`
 	Type       string                 `json:"type"`
 	Properties map[string]interface{} `json:"properties"`
 	Geometry   Geometry               `json:"geometry"`
@@ -86,6 +76,7 @@ func convertToGeoJSON(courses []models.ElderlyFitnessCourse) GeoJSONFeatureColle
 		}
 
 		feature := GeoJSONFeature{
+			ID:         fmt.Sprintf("%d", course.ID), // Use database ID as feature ID
 			Type:       "Feature",
 			Properties: properties,
 			Geometry: Geometry{
@@ -98,14 +89,7 @@ func convertToGeoJSON(courses []models.ElderlyFitnessCourse) GeoJSONFeatureColle
 	}
 
 	return GeoJSONFeatureCollection{
-		Type: "FeatureCollection",
-		Name: "elderly_fitness_courses",
-		CRS: CRS{
-			Type: "name",
-			Properties: CRSProps{
-				Name: "urn:ogc:def:crs:OGC:1.3:CRS84",
-			},
-		},
+		Type:     "FeatureCollection",
 		Features: features,
 	}
 }
