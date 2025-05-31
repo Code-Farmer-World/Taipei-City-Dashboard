@@ -240,7 +240,9 @@ const loadMapData = async () => {
   try {
     // Get data from API
     const city = props.activeCity || props.mapRegion || 'taipei'
-	const apiUrl = `/data/small2.geojson`
+	const apiUrl = `https://dashboard.pamis.dev/api/v1/mapbox/?city=${city}`
+
+
 
 	
     
