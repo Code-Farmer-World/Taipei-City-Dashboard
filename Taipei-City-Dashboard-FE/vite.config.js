@@ -5,7 +5,7 @@ import viteCompression from "vite-plugin-compression";
 // 嘗試讀取環境變數，若不存在則回傳 false
 let isDockerCompose = process?.env.DOCKER_COMPOSE === "true"; // eslint-disable-line no-undef
 
-const serverConfig = isDockerCompose
+const serverConfig = true
   ? {
       // Docker Compose override config
       headers: { 'X-Robots-Tag': 'noindex, nofollow' },
@@ -13,9 +13,9 @@ const serverConfig = isDockerCompose
       port: 80, // 如有需要可變更 port
       proxy: {
         "/api/dev": {
-          target: "http://dashboard-be:8080",
+          target: "https://dashboard.pamis.dev",
           changeOrigin: true,
-          rewrite: (path) => path.replace("/dev", "/v1")
+          rewrite: (path) => path.replace("/api/dev", "/api/v1")
         }
       }
     }

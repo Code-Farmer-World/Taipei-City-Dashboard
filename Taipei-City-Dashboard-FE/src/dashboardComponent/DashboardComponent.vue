@@ -28,6 +28,7 @@ import BarChartWithGoal from "./components/BarChartWithGoal.vue";
 import IconPercentChart from "./components/IconPercentChart.vue";
 import IndicatorChart from "./components/IndicatorChart.vue";
 import TextUnitChart from "./components/TextUnitChart.vue";
+import EnhancedMapBox from "./components/EnhancedMapBox.vue";
 
 import MapLegendSvg from "./assets/chart/MapLegend.svg";
 import DistrictChartSvg from "./assets/chart/DistrictChart.svg";
@@ -220,6 +221,8 @@ function returnChartComponent(name, svg) {
 		return svg ? IndicatorChartSvg : IndicatorChart;
 	case "TextUnitChart":
 		return svg ? TextUnitChartSvg : TextUnitChart;
+	case "EnhancedMapBox":
+		return svg ? MapLegendSvg : EnhancedMapBox;
 	default:
 		return svg ? MapLegendSvg : MapLegend;
 	}
@@ -559,6 +562,28 @@ button:hover {
 	padding: var(--font-m);
 	border-radius: 5px;
 	background-color: var(--color-component-background);
+
+	/* 讓包含 EnhancedMapBox 的組件跨越整個網格寬度 */
+	&:has(.enhanced-mapbox) {
+		grid-column: 1 / -1;
+		height: 500px;
+		max-height: 500px;
+
+		@media (min-width: 720px) {
+			height: 600px;
+			max-height: 600px;
+		}
+
+		@media (min-width: 1200px) {
+			height: 700px;
+			max-height: 700px;
+		}
+
+		@media (min-width: 1800px) {
+			height: 800px;
+			max-height: 800px;
+		}
+	}
 
 	@media (min-width: 1050px) {
 		height: 370px;

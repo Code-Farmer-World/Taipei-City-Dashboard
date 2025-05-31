@@ -1,3 +1,5 @@
+import EnhancedMapBox from "../../../dashboardComponent/components/EnhancedMapBox.vue";
+
 export const chartTypes = {
 	DonutChart: "圓餅圖",
 	BarChart: "橫向長條圖",
@@ -19,6 +21,7 @@ export const chartTypes = {
 	IndicatorChart: "指標圖",
 	MapLegend: "地圖圖例",
 	TextUnitChart: "文字單位圖",
+	EnhancedMapBox: "銀髪健身分布",
 };
 
 export const chartsPerDataType = {
@@ -50,4 +53,5 @@ export const chartsPerDataType = {
 		"IconPercentChart",
 	],
 	map_legend: ["MapLegend"],
+	map_enhancedMapBox: ["EnhancedMapBox"],
 };
