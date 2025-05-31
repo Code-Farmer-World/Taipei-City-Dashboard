@@ -15,7 +15,7 @@ const serverConfig = true
         "/api/dev": {
           target: "https://dashboard.pamis.dev",
           changeOrigin: true,
-          rewrite: (path) => path.replace("/dev", "/v1")
+          rewrite: (path) => path.replace("/api/dev", "/api/v1")
         }
       }
     }

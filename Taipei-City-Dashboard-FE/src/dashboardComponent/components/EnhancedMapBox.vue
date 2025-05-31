@@ -238,33 +238,85 @@ const tryAlternativeMapStyle = () => {
 // Load map data based on region
 const loadMapData = async () => {
   try {
-    // Determine which data file to load based on mapRegion
-    let dataFile = '/data/small.geojson' // default for taipei
-
-    if (props.mapRegion === 'metrotaipei') {
-      // For Metro Taipei (both cities), use the combined data
-      dataFile = '/mapData/metrotaipei_village.geojson'
-    } else {
-      // For Taipei City, use the existing small.geojson
-      dataFile = '/data/small.geojson'
+    // Get data from API
+    const city = props.activeCity || props.mapRegion || 'taipei'
+    const apiUrl = `https://dashboard.pamis.dev/api/v1/mapbox/?city=${city}`
+    
+    const response = await fetch(apiUrl)
+    const apiData = await response.json()
+    
+    // Convert API data to GeoJSON format
+    const geojsonData = {
+      type: 'FeatureCollection',
+      features: apiData.data.map(item => {
+        // Parse the map coordinates string to get polygon coordinates
+        let coordinates
+        try {
+          const rawCoordinates = JSON.parse(item.map)
+          // Convert from [lat, lng] to [lng, lat] format for GeoJSON
+          coordinates = rawCoordinates.map(coord => [coord[1], coord[0]])
+          // Ensure coordinates are in the correct format for GeoJSON
+          if (coordinates && coordinates.length > 0) {
+            // Close the polygon if not already closed
+            if (JSON.stringify(coordinates[0]) !== JSON.stringify(coordinates[coordinates.length - 1])) {
+              coordinates.push(coordinates[0])
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to parse coordinates for item:', item.id)
+          coordinates = []
+        }
+        
+        return {
+          type: 'Feature',
+          properties: {
+            id: item.id,
+            city: item.city,
+            district: item.district,
+            address: item.address,
+            course: item.course,
+            category: item.category,
+            org_name: item.org_name,
+            provide_meal: item.provide_meal,
+            annual_district_ratio: item.annual_district_ratio,
+            annual_expected_participants: item.annual_expected_participants,
+            course_status: item.course_status,
+            popular_course: item.popular_course,
+            // Add random properties for 3D effect
+            height: Math.random() * 200 + 50,
+            base_height: Math.random() * 50
+          },
+          geometry: {
+            type: 'Polygon',
+            coordinates: coordinates.length > 0 ? [coordinates] : []
+          }
+        }
+      }).filter(feature => feature.geometry.coordinates.length > 0)
     }
-
-    const response = await fetch(dataFile)
-    const geojsonData = await response.json()
 
     // Filter data based on region if needed
     let filteredData = geojsonData
-    if (props.mapRegion === 'taipei' && geojsonData.features && dataFile.includes('metrotaipei')) {
-      // Filter for Taipei City only when using metrotaipei data
+    if (props.mapRegion === 'taipei') {
+      // Filter for Taipei City only
       filteredData = {
         ...geojsonData,
         features: geojsonData.features.filter(feature =>
           feature.properties &&
-          (feature.properties.PNAME === '臺北市' || feature.properties.COUNTYNAME === '臺北市')
+          (feature.properties.city === '臺北市' || feature.properties.city.includes('台北'))
+        )
+      }
+    } else if (props.mapRegion === 'metrotaipei') {
+      // Include both Taipei and New Taipei
+      filteredData = {
+        ...geojsonData,
+        features: geojsonData.features.filter(feature =>
+          feature.properties &&
+          (feature.properties.city === '臺北市' || feature.properties.city === '新北市' ||
+           feature.properties.city.includes('台北') || feature.properties.city.includes('新北'))
         )
       }
     }
-    // For metrotaipei, use all data without filtering
+    // For other regions, use all data without filtering
 
     // Remove existing source if it exists
     if (mapInstance.value.getSource('senior-service-data')) {
@@ -335,24 +387,28 @@ const showPopup = (coordinates, properties) => {
     popup.value.remove()
   }
 
-  const workingPopulation = parseInt(properties.pop_work_min || 0)
-  const transportAvg = parseInt(properties.transport_avg || 0)
-  const transportRate = properties.transport_rate ? (properties.transport_rate * 100).toFixed(1) : '無資料'
+  const expectedParticipants = parseInt(properties.annual_expected_participants || 0)
+  const districtRatio = properties.annual_district_ratio ? (properties.annual_district_ratio * 100).toFixed(1) : '無資料'
+  const courseStatus = properties.course_status || '未知'
+  const isPopular = properties.popular_course === 'true' || properties.popular_course === true
+  const provideMeal = properties.provide_meal === 'true' || properties.provide_meal === true
 
   const popupContent = `
     <div class="mapbox-popup">
-      <h3>${properties.VILLNAME || '未知地區'}</h3>
-      <p><strong>行政區：</strong>${properties.TOWNNAME || '未知'}</p>
-      <p><strong>工作人口數：</strong>${workingPopulation} 人</p>
-      <p><strong>交通便利度：</strong>${transportRate}%</p>
+      <h3>${properties.course || '未知課程'}</h3>
+      <p><strong>機構名稱：</strong>${properties.org_name || '未知'}</p>
+      <p><strong>城市：</strong>${properties.city || '未知'}</p>
+      <p><strong>行政區：</strong>${properties.district || '未知'}</p>
+      <p><strong>地址：</strong>${properties.address || '未知'}</p>
       <div class="service-breakdown">
-        <h4>銀髮族交通服務便利性分析</h4>
-        <p>🚌 公車服務：上車 ${properties.bus_up || 0} 人次 / 下車 ${properties.bus_down || 0} 人次</p>
-        <p>🚇 捷運服務：上車 ${properties.mrt_up || 0} 人次 / 下車 ${properties.mrt_down || 0} 人次</p>
-        <p>🚲 Ubike服務：借車 ${properties.ubike_up || 0} 人次 / 還車 ${properties.ubike_down || 0} 人次</p>
-        <p>📊 平均交通使用量：${transportAvg} 人次</p>
-        <p>🏠 非交通通勤人口：${properties.untransport || 0} 人</p>
-        <p class="service-note">💡 此區域銀髮族可透過多元交通工具便利出行</p>
+        <h4>課程詳細資訊</h4>
+        <p>📚 課程類別：${properties.category || '未分類'}</p>
+        <p>👥 預期參與人數：${expectedParticipants} 人</p>
+        <p>📊 區域比例：${districtRatio}%</p>
+        <p>📋 課程狀態：${courseStatus}</p>
+        <p>🍽️ 提供餐點：${provideMeal ? '是' : '否'}</p>
+        <p>⭐ 熱門課程：${isPopular ? '是' : '否'}</p>
+        <p class="service-note">💡 ${isPopular ? '這是一個熱門的銀髮族課程！' : '歡迎參與銀髮族課程活動'}</p>
       </div>
     </div>
   `

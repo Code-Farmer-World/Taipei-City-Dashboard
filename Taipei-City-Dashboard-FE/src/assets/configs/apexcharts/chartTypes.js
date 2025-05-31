@@ -21,7 +21,7 @@ export const chartTypes = {
 	IndicatorChart: "指標圖",
 	MapLegend: "地圖圖例",
 	TextUnitChart: "文字單位圖",
-	EnhancedMapBox: "銀髪服務分布地圖",
+	EnhancedMapBox: "銀髪健身分布",
 };
 
 export const chartsPerDataType = {
