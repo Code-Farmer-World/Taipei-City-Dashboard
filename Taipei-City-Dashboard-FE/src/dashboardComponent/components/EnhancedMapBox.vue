@@ -37,6 +37,16 @@ const props = defineProps({
   activeChart: {
     type: String,
     default: 'MapLegend'
+  },
+  activeCity: {
+    type: String,
+    default: ''
+  },
+  // 新增地圖區域切換 prop
+  mapRegion: {
+    type: String,
+    default: 'taipei', // 'taipei', 'metrotaipei'
+    validator: (value) => ['taipei', 'metrotaipei'].includes(value)
   }
 })
 
@@ -57,13 +67,44 @@ const currentFilter = ref(null)
 
 // Mapbox configuration
 const MAPBOXTOKEN = 'pk.eyJ1Ijoia2trMTIzNTUiLCJhIjoiY21hdXN0ZzQxMDBocjJtcHA0bGFla2xjYyJ9.VT_ubDB8ck90VbCCz4HdHg'
+
+// 地圖區域配置
+const mapRegionConfig = {
+  taipei: {
+    center: [121.55585298158064, 25.05244617333119],
+    zoom: 11.5,
+    pitch: 45,
+    bearing: 0,
+    bounds: [
+      [121.40842683023203, 24.958170494168186],
+      [121.69688923958796, 25.21839405253573]
+    ]
+  },
+  metrotaipei: {
+    center: [121.5394269250055, 25.037188097677472],
+    zoom: 10.5,
+    pitch: 45,
+    bearing: 0,
+    bounds: [
+      [121.0471573380878, 24.695612549499685],
+      [121.92655852488502, 25.30785665565]
+    ]
+  }
+}
+
+// 動畫配置
+const animationConfig = {
+  duration: 3000, // 3秒動畫
+  easing: 'ease-in-out'
+}
+
 const mapConfig = {
   container: 'enhanced-mapbox-container',
   style: 'mapbox://styles/mapbox/light-v10',
-  center: [121.5654, 25.0330], // Taipei center
-  zoom: 10,
-  pitch: 45,
-  bearing: 0,
+  center: mapRegionConfig.taipei.center,
+  zoom: mapRegionConfig.taipei.zoom,
+  pitch: mapRegionConfig.taipei.pitch,
+  bearing: mapRegionConfig.taipei.bearing,
   antialias: true
 }
 
@@ -176,17 +217,47 @@ const tryAlternativeMapStyle = () => {
   }
 }
 
-// Load map data
+// Load map data based on region
 const loadMapData = async () => {
   try {
-    // Load small.geojson data
-    const response = await fetch('/data/small.geojson')
+    // Determine which data file to load based on mapRegion
+    let dataFile = '/data/small.geojson' // default for taipei
+    
+    if (props.mapRegion === 'metrotaipei') {
+      // For Metro Taipei (both cities), use the combined data
+      dataFile = '/mapData/metrotaipei_village.geojson'
+    } else {
+      // For Taipei City, use the existing small.geojson
+      dataFile = '/data/small.geojson'
+    }
+    
+    const response = await fetch(dataFile)
     const geojsonData = await response.json()
+    
+    // Filter data based on region if needed
+    let filteredData = geojsonData
+    if (props.mapRegion === 'taipei' && geojsonData.features && dataFile.includes('metrotaipei')) {
+      // Filter for Taipei City only when using metrotaipei data
+      filteredData = {
+        ...geojsonData,
+        features: geojsonData.features.filter(feature => 
+          feature.properties && 
+          (feature.properties.PNAME === '臺北市' || feature.properties.COUNTYNAME === '臺北市')
+        )
+      }
+    }
+    // For metrotaipei, use all data without filtering
+    
+    // Remove existing source if it exists
+    if (mapInstance.value.getSource('senior-service-data')) {
+      mapInstance.value.removeLayer('senior-service-3d')
+      mapInstance.value.removeSource('senior-service-data')
+    }
     
     // Add data source
     mapInstance.value.addSource('senior-service-data', {
       type: 'geojson',
-      data: geojsonData
+      data: filteredData
     })
     
     // Add 3D buildings layer
@@ -274,6 +345,52 @@ const showPopup = (coordinates, properties) => {
     .addTo(mapInstance.value)
 }
 
+// 地圖區域切換方法
+const switchMapRegion = async (region) => {
+  if (!mapInstance.value || !mapRegionConfig[region]) return
+  
+  const config = mapRegionConfig[region]
+  
+  // Reload map data for the new region
+  await loadMapData()
+  
+  // Re-add the 3D layer after loading new data
+  const layers = mapInstance.value.getStyle().layers
+  const labelLayerId = layers.find(
+    (layer) => layer.type === 'symbol' && layer.layout['text-field']
+  )?.id
+  
+  if (labelLayerId && !mapInstance.value.getLayer('senior-service-3d')) {
+    mapInstance.value.addLayer({
+      id: 'senior-service-3d',
+      type: 'fill-extrusion',
+      source: 'senior-service-data',
+      layout: {},
+      paint: enhancedStyle.PopWorkStyle
+    }, labelLayerId)
+  }
+  
+  // 使用 easeTo 進行平滑動畫切換
+  mapInstance.value.easeTo({
+    center: config.center,
+    zoom: config.zoom,
+    pitch: config.pitch,
+    bearing: config.bearing,
+    duration: animationConfig.duration,
+    easing: animationConfig.easing
+  })
+  
+  // 可選：同時調整地圖邊界
+  setTimeout(() => {
+    if (config.bounds) {
+      mapInstance.value.fitBounds(config.bounds, {
+        duration: animationConfig.duration / 2,
+        padding: 20
+      })
+    }
+  }, animationConfig.duration / 2)
+}
+
 // Watch for data changes
 watch(() => props.series, () => {
   if (mapInstance.value && mapInstance.value.isStyleLoaded()) {
@@ -281,6 +398,46 @@ watch(() => props.series, () => {
     loadMapData()
   }
 }, { deep: true })
+
+// Watch for map region changes
+watch(() => props.mapRegion, (newRegion) => {
+  if (mapInstance.value && mapInstance.value.isStyleLoaded()) {
+    switchMapRegion(newRegion)
+  }
+}, { immediate: false })
+
+// Watch for activeCity changes and map to region
+watch(() => props.activeCity, async (newCity) => {
+  if (mapInstance.value && mapInstance.value.isStyleLoaded()) {
+    // Map activeCity values to mapRegion values
+    let targetRegion = 'taipei' // default
+    
+    if (newCity === 'taipei') {
+      targetRegion = 'taipei'
+    } else if (newCity === 'metrotaipei') {
+      targetRegion = 'metrotaipei'
+    }
+    
+    // Update the mapRegion prop to trigger data reload
+    const currentMapRegion = props.mapRegion
+    if (currentMapRegion !== targetRegion) {
+      // Temporarily update mapRegion for data loading
+      Object.defineProperty(props, 'mapRegion', {
+        value: targetRegion,
+        writable: true,
+        configurable: true
+      })
+    }
+    
+    await switchMapRegion(targetRegion)
+  }
+}, { immediate: false })
+
+// 暴露方法給父組件使用
+defineExpose({
+  switchMapRegion,
+  mapInstance: () => mapInstance.value
+})
 
 // Lifecycle hooks
 onMounted(() => {
@@ -303,7 +460,7 @@ onUnmounted(() => {
 .enhanced-mapbox {
   position: relative;
   width: 100%;
-  height: 400px;
+  height: 100%;
   border-radius: 5px;
   overflow: hidden;
 }
