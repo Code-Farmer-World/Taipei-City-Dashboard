@@ -38,6 +38,7 @@ func ConfigureRoutes() {
 	configureIncidentRoutes()
 	// configureWsRoutes()
 	configureContributorRoutes()
+	configureMapboxRoutes()
 }
 
 func configureAuthRoutes() {
@@ -164,6 +165,11 @@ func configureContributorRoutes() {
 		contributorRoutes.PATCH("/:id", controllers.UpdateContributor)
 		contributorRoutes.DELETE("/:id", controllers.DeleteContributor)
 	}
+}
+
+func configureMapboxRoutes() {
+	mapboxRoutes := RouterGroup.Group("/mapbox")
+	mapboxRoutes.GET("/", controllers.GetAllElderlyFitnessCourses)
 }
 
 // func configureWsRoutes() {
