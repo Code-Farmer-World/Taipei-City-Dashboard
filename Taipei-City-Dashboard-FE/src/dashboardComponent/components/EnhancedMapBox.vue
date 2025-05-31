@@ -240,79 +240,61 @@ const loadMapData = async () => {
   try {
     // Get data from API
     const city = props.activeCity || props.mapRegion || 'taipei'
-    const apiUrl = `https://dashboard.pamis.dev/api/v1/mapbox/?city=${city}`
+	const apiUrl = `/data/small2.geojson`
+
+	
     
     const response = await fetch(apiUrl)
-    const apiData = await response.json()
+     const apiData = await response.json()
+    
+    // Check if API response has valid data
+    if (!apiData || !apiData.features || !Array.isArray(apiData.features)) {
+        console.warn('Invalid API response structure:', apiData)
+        return
+      }
     
     // Convert API data to GeoJSON format
+    // API 回應已經是標準的 GeoJSON 格式，直接使用
     const geojsonData = {
       type: 'FeatureCollection',
-      features: apiData.data.map(item => {
-        // Parse the map coordinates string to get polygon coordinates
-        let coordinates
-        try {
-          const rawCoordinates = JSON.parse(item.map)
-          // Convert from [lat, lng] to [lng, lat] format for GeoJSON
-          coordinates = rawCoordinates.map(coord => [coord[1], coord[0]])
-          // Ensure coordinates are in the correct format for GeoJSON
-          if (coordinates && coordinates.length > 0) {
-            // Close the polygon if not already closed
-            if (JSON.stringify(coordinates[0]) !== JSON.stringify(coordinates[coordinates.length - 1])) {
-              coordinates.push(coordinates[0])
-            }
-          }
-        } catch (e) {
-          console.warn('Failed to parse coordinates for item:', item.id)
-          coordinates = []
+      features: apiData.features.map(feature => ({
+        ...feature,
+        properties: {
+          ...feature.properties,
+          // Add random properties for 3D effect
+          height: Math.random() * 200 + 50,
+          base_height: Math.random() * 50
         }
-        
-        return {
-          type: 'Feature',
-          properties: {
-            id: item.id,
-            city: item.city,
-            district: item.district,
-            address: item.address,
-            course: item.course,
-            category: item.category,
-            org_name: item.org_name,
-            provide_meal: item.provide_meal,
-            annual_district_ratio: item.annual_district_ratio,
-            annual_expected_participants: item.annual_expected_participants,
-            course_status: item.course_status,
-            popular_course: item.popular_course,
-            // Add random properties for 3D effect
-            height: Math.random() * 200 + 50,
-            base_height: Math.random() * 50
-          },
-          geometry: {
-            type: 'Polygon',
-            coordinates: coordinates.length > 0 ? [coordinates] : []
-          }
-        }
-      }).filter(feature => feature.geometry.coordinates.length > 0)
+      }))
     }
 
     // Filter data based on region if needed
     let filteredData = geojsonData
     if (props.mapRegion === 'taipei') {
-      // Filter for Taipei City only
+      // Filter for Taipei City only - based on coordinates or org_name
       filteredData = {
         ...geojsonData,
         features: geojsonData.features.filter(feature =>
           feature.properties &&
-          (feature.properties.city === '臺北市' || feature.properties.city.includes('台北'))
+          (feature.properties.org_name && feature.properties.org_name.includes('台北')) ||
+          (feature.geometry && feature.geometry.coordinates && 
+           feature.geometry.coordinates[0] && feature.geometry.coordinates[0][0] &&
+           feature.geometry.coordinates[0][0][0] >= 121.4 && feature.geometry.coordinates[0][0][0] <= 121.7 &&
+           feature.geometry.coordinates[0][0][1] >= 25.0 && feature.geometry.coordinates[0][0][1] <= 25.3)
         )
       }
     } else if (props.mapRegion === 'metrotaipei') {
-      // Include both Taipei and New Taipei
+      // Include both Taipei and New Taipei - based on coordinates or org_name
       filteredData = {
         ...geojsonData,
         features: geojsonData.features.filter(feature =>
           feature.properties &&
-          (feature.properties.city === '臺北市' || feature.properties.city === '新北市' ||
-           feature.properties.city.includes('台北') || feature.properties.city.includes('新北'))
+          (feature.properties.org_name && 
+           (feature.properties.org_name.includes('台北') || feature.properties.org_name.includes('新北'))) ||
+          (feature.geometry && feature.geometry.coordinates && 
+           feature.geometry.coordinates[0] && feature.geometry.coordinates[0][0] &&
+           feature.geometry.coordinates[0][0][0] >= 121.2 && feature.geometry.coordinates[0][0][0] <= 121.8 &&
+           feature.geometry.coordinates[0][0][1] >= 24.8 && feature.geometry.coordinates[0][0][1] <= 25.4)
         )
       }
     }
@@ -564,6 +546,9 @@ onUnmounted(() => {
 
 
 <style scoped>
+
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
 /* ────────── 地圖容器 ────────── */
 .enhanced-mapbox {
   position: relative;
@@ -714,9 +699,6 @@ onUnmounted(() => {
 .mapboxgl-popup-tip {
   border-top-color: #fff;
 }
-
-/* ────────── Material Icons ────────── */
-@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
 .material-icons {
   font-family: 'Material Icons';
