@@ -1,0 +1,91 @@
+@import '@/assets/scss/variables.scss';
+@import url('https://fonts.googleapis.com/css?family=Noto+Sans+TC:400,500,600&display=swap&subset=chinese-traditional');
+
+html{
+    font-size:16px;
+    @media screen and (max-width:1025px){ // For mobile
+        font-size: 14px;
+    }
+    @media all and (min-width: 1920px){ //For dashboard
+        font-size: 18px;
+    }
+}
+*{
+	margin: 0;
+	padding: 0;
+}
+[v-cloak] { display:none; }
+#app {
+	font-family: "Noto Sans TC", "Microsoft Yahei", "微軟雅黑", sans-serif;
+    background: $whiteColor;
+	color: $blackColor;
+}
+b{
+	font-weight: 500;
+}
+h1{
+    margin: 0.25rem 0 0.5rem 0;
+	font-size: 2rem;
+    font-weight: 600;
+    color: $whiteColor;
+}
+h2{
+    margin: 0.25rem 0;
+	font-size: 1.5rem;
+    font-weight: 600;
+    color: $whiteColor;
+}
+h3{
+	font-size: 1rem;
+}
+h6{
+    margin: 0 0 1.5rem 0;
+	font-size: 1.25rem;
+    font-weight: 600;
+    color: $titleColor;
+}
+p, li{
+	font-size: 1rem;
+	line-height: 2;
+}
+ol{
+    margin-left: 1rem;
+}
+a{
+    display: inline-block;
+    padding: 0;
+    text-decoration: underline;
+    color: $blackColor;
+}
+button{
+    box-sizing: border-box;
+	cursor: pointer;
+	outline: 0;
+    border: none;
+    background-color: transparent;
+    background-size: contain;
+    color:  lighten($textSubColor, 15);
+    &:focus{
+        outline: 1px solid $blueColor;
+        outline-offset: 4px;
+        box-shadow: none;
+    }
+}
+img{
+	height: 100%;
+}
+
+#app{
+    @include scrollbar_style;
+}
+
+.buttonBox{
+	button{
+		width: 1.5rem;
+		height: 1.5rem;
+		padding: 0;
+		margin: 0 .25rem;
+		background-color: $blackColor;
+		border-radius: 50%;
+	}
+}

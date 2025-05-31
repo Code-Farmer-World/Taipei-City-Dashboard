@@ -1,0 +1,74 @@
+@import '@/assets/scss/variables.scss';
+#main_footer {
+	position: relative;
+	text-align: left;
+	background: rgba($titleColor, .9);
+	color: $whiteColor;
+	padding: 2rem 2rem 4rem 2rem;
+	z-index: 10;
+	display: flex;
+	justify-content: center;
+	>div:first-child{
+		border-right: 1px solid rgba($whiteColor, .6);
+		margin-right: 3rem;
+		padding: 0 1rem;
+		flex-basis: 30rem;
+		.tuicLogo{
+			display: flex;
+			align-items: center;
+			padding: 1.5rem 4.5rem 1.5rem 0;
+			img{
+				width: 100%;
+			}
+		}
+	}
+	@media screen and (max-width:901px){
+		flex-direction: column-reverse;
+		>div:first-child{
+			border-right: none;
+			margin-right: 0;
+			padding: 0;
+			flex-basis: auto;
+			.tuicLogo{
+				width: 15rem;
+				padding: 0;
+				margin: 3rem 0;
+			}
+		}
+	}
+	h6{
+		font-size: 1rem;
+		margin: 2rem 0 0.5rem 0;
+		color: $whiteColor;
+	}
+	p{
+		font-size: 0.875rem;
+		margin-left: 2em;
+	}
+	a{
+		color: $whiteColor;
+		&:hover{
+			color: $blueColor;
+		}
+	}
+	.contact_list{
+		margin-top: 1rem;
+		margin-left: .25rem;
+		>div{
+			display: inline-flex;
+			align-items: flex-start;
+			width: 100%;
+			margin-bottom: 1rem;
+			font-size: 0.9rem;
+			img{
+				width: 1.5rem;
+				height: 1.5rem;
+				margin-right: 0.5rem;
+			}
+			span{
+				margin-right: 0.5rem;
+				min-width: 2.5rem;
+			}
+		}
+	}
+}
