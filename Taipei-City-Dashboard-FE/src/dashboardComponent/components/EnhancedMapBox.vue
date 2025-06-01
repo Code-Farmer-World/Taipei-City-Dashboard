@@ -244,6 +244,7 @@ const loadMapData = async () => {
 
 
 
+
 	
     
     const response = await fetch(apiUrl)
@@ -369,20 +370,19 @@ const showPopup = (coordinates, properties) => {
 
   const popupContent = `
     <div class="mapbox-popup">
-      <h3>${properties.popular_course || '未知課程'}</h3>
+         
+
       <p><strong>機構名稱：</strong>${properties.org_name || '未知'}</p>
-      <p><strong>城市：</strong>台北市</p>
-      <p><strong>行政區：</strong>北投區</p>
-      <p><strong>地址：</strong>關渡地區</p>
+     
       <div class="service-breakdown">
         <h4>課程詳細資訊</h4>
-        <p>📚 課程類別：銀髮族課程</p>
-        <p>👥 預期參與人數：${expectedParticipants} 人</p>
-        <p>📊 區域比例：${districtRatio}%</p>
-        <p>📋 課程狀態：${courseStatus}</p>
-        <p>🍽️ 提供餐點：${provideMeal ? '是' : '否'}</p>
-        <p>⭐ 熱門課程：${isPopular ? '是' : '否'}</p>
-        <p class="service-note">💡 ${isPopular ? '這是一個熱門的銀髮族課程！' : '歡迎參與銀髮族課程活動'}</p>
+             
+        <p>👥 預期參與人數：${properties.annual_expected_participants} 人</p>
+        <p>📊 年度開課地區比例：${properties.annual_district_ratio}%</p>
+        <p>📋 課程狀態：${properties.course_status}</p>
+        <p>🍽️ 提供餐點：${properties.provide_meal}</p>
+        <p>⭐ 熱門課程：${properties.popular_course}</p>
+     
       </div>
     </div>
   `
